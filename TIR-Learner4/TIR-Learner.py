@@ -67,8 +67,9 @@ def main():
 	ok_to_continue = True
 	
 	if species is not None:
+		species = species.lower()
 		if species not in ok_species:
-			print(f'Your supplied species {self.species} is not in the acceptable species list, which is:')
+			print(f'Your supplied species {species} is not in the acceptable species list, which is:')
 			for s in ok_species:
 				print(f'\t{s}')
 			ok_to_continue = False
