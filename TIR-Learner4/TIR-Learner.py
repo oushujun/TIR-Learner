@@ -18,7 +18,7 @@ def options():
 												 
 	parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {VERSION} {INFO}")
 
-	parser.add_argument("-g", "--genome_file", help="Genome file in fasta format",
+	parser.add_argument("-g", "-f", "--genome_file", help="Genome file in fasta format",
 						type=str, required=True)
 
 	parser.add_argument("-s", "--species", default = None, help="Check for homologous TIRs based on one of the following: \
@@ -68,7 +68,9 @@ def main():
 	
 	if species is not None:
 		species = species.lower()
-		if species not in ok_species:
+		if species == 'others':
+			species = None  # 'others' means no species-specific filtering (EDTA compatibility)
+		elif species not in ok_species:
 			print(f'Your supplied species {species} is not in the acceptable species list, which is:')
 			for s in ok_species:
 				print(f'\t{s}')
