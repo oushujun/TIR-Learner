@@ -7,7 +7,7 @@
 import argparse
 import os
 
-VERSION = "v4.0.1"
+VERSION = "v1.0"
 INFO = "by Kenji Gerhardt, released under GPLv3"
 
 #Options
@@ -67,7 +67,6 @@ def main():
 	ok_to_continue = True
 	
 	if species is not None:
-		species = species.lower()
 		if species not in ok_species:
 			print(f'Your supplied species {species} is not in the acceptable species list, which is:')
 			for s in ok_species:
@@ -86,7 +85,7 @@ def main():
 		os.environ["CUDA_VISIBLE_DEVICES"] = "," #force torch to use CPU, not GPU
 
 	
-		print('Loading program resources. This ususally takes about a minute.')
+		print('Loading program resources. This usually takes about a minute.')
 		from app.main import newTL
 		print('Program resources loaded.')
 		print('')
