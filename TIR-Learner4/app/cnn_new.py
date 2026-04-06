@@ -223,267 +223,101 @@ class CNN_manager:
 		final_tirvish = None
 		final_grf = None
 		
-		o1 = open(final_fa, 'w')
-		o2 = open(final_g3, 'w')
-		o3 = open(final_fa_filt, 'w')
-		o4 = open(final_g3_filt, 'w')
-		
 		loader = json_loader(working_dir = wd)
 		
-		if self.tirvish is not None:
-			post_cnn_file = os.path.join(wd, 'checkpoints', 'post_CNN_TIRVish_json.txt')
-			if not os.path.exists(post_cnn_file):
-			
-				loader.load_json_for_cnn(self.tirvish)
-				total_sequences = sum(len(w[1]) for w in loader.workloads)
+		with open(final_fa, 'w') as o1, open(final_g3, 'w') as o2, open(final_fa_filt, 'w') as o3, open(final_g3_filt, 'w') as o4:
+			if self.tirvish is not None:
+				post_cnn_file = os.path.join(wd, 'checkpoints', 'post_CNN_TIRVish_json.txt')
+				if not os.path.exists(post_cnn_file):
+				
+					loader.load_json_for_cnn(self.tirvish)
+					total_sequences = sum(len(w[1]) for w in loader.workloads)
+					num_args = len(loader.workloads)
+					ct = 0
+					percent_mod = int((num_args / 100)+0.5) if num_args > 100 else 1
+					
+					print(f'Beginning TIRVish TIR candidate CNN search...')
+					print('')
+					
+					final_json = {}
+					with multiprocessing.Pool(self.threads, initializer = cnn_init, initargs = ()) as pool:
+						for src, ret_json, gff3, fasta, keeps in pool.imap_unordered(one_cnn, loader.workloads):
+							#print(gff3)
+							ct += 1
+							if ret_json is not None:
+								for seqid in keeps:
+									#Add keep/remove overlap info
+									ret_json[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
+									
+									#Print fasta, gff, and filtered fasta, gff outputs
+									for i in range(0, keeps[seqid].shape[0]):
+										print(fasta[seqid][i], file = o1)
+										print(gff3[seqid][i], file = o2)
+										if keeps[seqid][i]:
+											print(fasta[seqid][i], file = o3)
+											print(gff3[seqid][i], file = o4)
+
+								final_json[src] = ret_json
+							if ct % percent_mod == 0:
+								print(f'CNN search of TIRVish TIR candidates is {round(100*ct/num_args, 2)}% complete ({ct} of {num_args})')
+							
+					print('')
+					print('Writing TIRVish JSON output...')
+					with open(post_cnn_file, 'w', encoding = 'ascii') as out:
+						json.dump(final_json, out, indent = 4)
+					
+					print(f'TIRVish TIR candidate CNN search complete!')
+					print('')
+				else:
+					print('TIRVish CNN search already complete.')
+					
+				final_tirvish = post_cnn_file
+
+			if self.grf is not None:
+				loader.load_json_for_cnn(self.grf)
 				num_args = len(loader.workloads)
 				ct = 0
 				percent_mod = int((num_args / 100)+0.5) if num_args > 100 else 1
 				
-				print(f'Beginning TIRVish TIR candidate CNN search...')
-				print('')
+				post_cnn_file = os.path.join(wd, 'checkpoints', 'post_CNN_GRF_json.txt')
 				
-				final_json = {}
-				with multiprocessing.Pool(self.threads, initializer = cnn_init, initargs = ()) as pool:
-					for src, ret_json, gff3, fasta, keeps in pool.imap_unordered(one_cnn, loader.workloads):
-						#print(gff3)
-						ct += 1
-						if ret_json is not None:
-							for seqid in keeps:
-								#Add keep/remove overlap info
-								ret_json[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
-								
-								#Print fasta, gff, and filtered fasta, gff outputs
-								for i in range(0, keeps[seqid].shape[0]):
-									print(fasta[seqid][i], file = o1)
-									print(gff3[seqid][i], file = o2)
-									if keeps[seqid][i]:
-										print(fasta[seqid][i], file = o3)
-										print(gff3[seqid][i], file = o4)
-
-							final_json[src] = ret_json
-						if ct % percent_mod == 0:
-							print(f'CNN search of TIRVish TIR candidates is {round(100*ct/num_args, 2)}% complete ({ct} of {num_args})')
-						
-				print('')
-				print('Writing TIRVish JSON output...')
-				with open(post_cnn_file, 'w', encoding = 'ascii') as out:
-					json.dump(final_json, out, indent = 4)
-				
-				print(f'TIRVish TIR candidate CNN search complete!')
-				print('')
-			else:
-				print('TIRVish CNN search already complete.')
-				
-			final_tirvish = post_cnn_file
-
-		if self.grf is not None:
-			loader.load_json_for_cnn(self.grf)
-			num_args = len(loader.workloads)
-			ct = 0
-			percent_mod = int((num_args / 100)+0.5) if num_args > 100 else 1
-			
-			post_cnn_file = os.path.join(wd, 'checkpoints', 'post_CNN_GRF_json.txt')
-			
-			if not os.path.exists(post_cnn_file):
-				print(f'Beginning GRF TIR candidate CNN search...')
-				print('')
-				
-				final_json = {}
-				with multiprocessing.Pool(self.threads, initializer = cnn_init, initargs = ()) as pool:
-					for src, ret_json, gff3, fasta, keeps in pool.imap_unordered(one_cnn, loader.workloads):
-						#print(gff3)
-						if ret_json is not None:
-							for seqid in keeps:
-								#Add keep/remove overlap info
-								ret_json[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
-								
-								#Print fasta, gff, and filtered fasta, gff outputs
-								for i in range(0, keeps[seqid].shape[0]):
-									print(fasta[seqid][i], file = o1)
-									print(gff3[seqid][i], file = o2)
-									if keeps[seqid][i]:
-										print(fasta[seqid][i], file = o3)
-										print(gff3[seqid][i], file = o4)
-							
-							#Store up the final json for one output at the end
-							final_json[src] = ret_json
-						ct += 1
-						if ct % percent_mod == 0:
-							print(f'CNN search of GRF TIR candidates is {round(100*ct/num_args, 2)}% complete ({ct} of {num_args})')
-				
-				print('')
-				print('Writing GRF JSON output...')
-				with open(post_cnn_file, 'w', encoding = 'ascii') as out:
-					json.dump(final_json, out, indent = 4)
+				if not os.path.exists(post_cnn_file):
+					print(f'Beginning GRF TIR candidate CNN search...')
+					print('')
 					
-				print(f'GRF TIR candidate CNN search complete!')
-				print('')
-			else:
-				print('GRF CNN search already complete.')
-			
-			final_grf = post_cnn_file
-		
-		o1.close()
-		o2.close()
-		o3.close()
-		o4.close()
+					final_json = {}
+					with multiprocessing.Pool(self.threads, initializer = cnn_init, initargs = ()) as pool:
+						for src, ret_json, gff3, fasta, keeps in pool.imap_unordered(one_cnn, loader.workloads):
+							#print(gff3)
+							if ret_json is not None:
+								for seqid in keeps:
+									#Add keep/remove overlap info
+									ret_json[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
+									
+									#Print fasta, gff, and filtered fasta, gff outputs
+									for i in range(0, keeps[seqid].shape[0]):
+										print(fasta[seqid][i], file = o1)
+										print(gff3[seqid][i], file = o2)
+										if keeps[seqid][i]:
+											print(fasta[seqid][i], file = o3)
+											print(gff3[seqid][i], file = o4)
+								
+								#Store up the final json for one output at the end
+								final_json[src] = ret_json
+							ct += 1
+							if ct % percent_mod == 0:
+								print(f'CNN search of GRF TIR candidates is {round(100*ct/num_args, 2)}% complete ({ct} of {num_args})')
+					
+					print('')
+					print('Writing GRF JSON output...')
+					with open(post_cnn_file, 'w', encoding = 'ascii') as out:
+						json.dump(final_json, out, indent = 4)
+						
+					print(f'GRF TIR candidate CNN search complete!')
+					print('')
+				else:
+					print('GRF CNN search already complete.')
+				
+				final_grf = post_cnn_file
 		
 		return final_fa, final_g3, final_fa_filt, final_g3_filt, final_tirvish, final_grf
-		
-		
-		
-		
-			
-			
-
-'''
-def run_by_chunks(chunk):
-	df = pd.read_csv(chunk, sep = "\t", dtype = {'id':str, 'seq':str}, names = ("id", "seq"))
-
-	#print("  Step 1/7: Getting sequence fragment for prediction")
-	#df["seq_frag"] = df.swifter.progress_bar(False).apply(_get_sequence_fragment, axis=1)
-	#just process in-flow rather than loading the data again later
-	#df = df.drop(columns="seq")
-
-	#df = _feature_encoding(df, False)
-	
-	df = _ml_predict(df, CNN_MODEL_DIR_ABS_PATH)
-	
-	if df is not None:
-		df = _post_processing(df, False)
-	
-	os.remove(chunk)
-	
-	return df
-
-
-def _get_sequence_fragment(x: pd.Series, feature_size: int = 200) -> str:
-	#200 bp extended sequences
-	seq = x["seq"]
-	len_seq = len(seq)
-	
-	#Since these are the extended sequences, this would just be the flanks with no TIR at all
-	if len_seq >= feature_size * 2:
-		return seq[0:feature_size] + seq[-feature_size:]
-	
-	half_seqlen = int(len_seq / 2)
-	
-	#Front half of the sequence
-	s1 = seq[0:half_seqlen]
-
-	#Back half of the sequence
-	s2 = seq[half_seqlen:]
-	
-	#Padding that extend s1 and s2 to feature size
-	n1 = "N" * (feature_size - len(s1))
-	n2 = "N" * (feature_size - len(s2))
-	
-	#I think these should be:
-	#s1 = n1 + s1
-	#s2 = 
-	
-	s1 += n1
-	s2 = n2 + s2
-	
-	#Is this really correct? this will be s1NNNNNNNNs2NNNNNNNNNNN
-	#Wouldn't we expect NNNNNNNS1S2NNNNNNNNN?
-	return s1 + s2
-
-
-def _feature_encoding(df_in: pd.DataFrame, flag_verbose: bool = True) -> pd.DataFrame:
-	feature_int_encoder = LabelEncoder()
-	voc = ["A", "C", "G", "T", "N"]
-	num_classes = len(voc)
-	feature_int_encoder.fit(voc)
-
-	df = df_in.loc[:, ["id", "seq_frag"]].copy()
-	#print("  Step 2/7: Label Encoding - Transforming non-numerical labels to numerical labels")
-	df["int_enc"] = df.swifter.progress_bar(flag_verbose).apply(
-		lambda x: np.array(feature_int_encoder.transform(list(x["seq_frag"]))).reshape(-1, 1), axis=1)
-	df = df.drop(columns="seq_frag")
-
-	#print("  Step 3/7: One-Hot Encoding - Converting class vectors to binary class matrices")
-	df["feature"] = df.swifter.progress_bar(flag_verbose).apply(
-		lambda x: keras.utils.to_categorical(x["int_enc"], num_classes=num_classes), axis=1)
-	df = df.drop(columns="int_enc")
-
-	return df
-
-
-
-#This will get removed later
-
-from typing import Set, Tuple, List, Dict, Iterable, Sequence, Union, Optional  # noqa
-
-#def _ml_predict(df_in: pd.DataFrame, genome_file: str, path_to_model: str) -> Optional[pd.DataFrame]:
-def _ml_predict(df_in: pd.DataFrame, path_to_model: str) -> Optional[pd.DataFrame]:
-	model = keras.models.load_model(path_to_model)
-	pre_feature = df_in["feature"].to_numpy()
-	df = df_in.drop(columns="feature")
-
-	if pre_feature.shape[0] == 0:
-		#print("Info: " + genome_file + " has no candidate to be classified")
-		return None
-
-	l_class = ["DTA", "DTC", "DTH", "DTM", "DTT", "NonTIR"]
-	target_int_encoder = LabelEncoder()
-	target_int_encoder.fit(l_class)
-	target_int_encoded = target_int_encoder.transform(l_class)
-	d = dict(zip(target_int_encoded, l_class))
-
-	#print("  Step 4/7: CNN prediction")
-	predicted_labels = model.predict(np.stack(pre_feature), verbose = None)
-
-	df["percent"] = pd.Series(predicted_labels.max(axis=-1))
-	y_classes = predicted_labels.argmax(axis=-1)
-	df["TIR_type"] = pd.Series([d[i] for i in y_classes])
-	
-	return df
-
-
-
-
-def _post_processing(df_in: pd.DataFrame, flag_verbose: bool = True) -> pd.DataFrame:
-	df = df_in.loc[:, ["id", "TIR_type"]]
-	df = df[df["TIR_type"] != "NonTIR"].reset_index(drop=True)
-	#print("  Step 5/7: Retrieving sequence ID")
-	df["seqid"] = df.swifter.progress_bar(flag_verbose).apply(lambda x: x["id"].split(":")[0], axis=1)
-	#print("  Step 6/7: Retrieving sequence starting coordinate")
-	df["sstart"] = df.swifter.progress_bar(flag_verbose).apply(lambda x: int(x["id"].split(":")[1]), axis=1)
-	#print("  Step 7/7: Retrieving sequence ending coordinate")
-	df["send"] = df.swifter.progress_bar(flag_verbose).apply(lambda x: int(x["id"].split(":")[2]), axis=1)
-	df = df.loc[:, ["TIR_type", "id", "seqid", "sstart", "send"]]
-	df = df.sort_values(["TIR_type", "seqid", "sstart", "send"], ignore_index=True)
-		
-	return df
-
-def execute(TIRLearner_instance) -> pd.DataFrame:
-	num_chunks = min([TIRLearner_instance.processors, len(TIRLearner_instance["base"])])
-
-	ct = 0
-	print(f"{len(TIRLearner_instance["base"])} partitions to process with CNN")
-	pool = mp.Pool(num_chunks)
-	with open(TIRLearner_instance.processed_de_novo_result_file_name_cnn, "w", newline='') as out:
-		for result in pool.imap_unordered(run_by_chunks, TIRLearner_instance["base"]):
-			ct += 1
-			if result is not None:
-				result = _get_start_end(TIRLearner_instance.genome_lengths, result)
-				result.to_csv(out, sep = '\t', header = False, index = False)
-			print(f'{ct} of {len(TIRLearner_instance["base"])} complete!')
-
-	return TIRLearner_instance.processed_de_novo_result_file_name_cnn
-	
-'''
-
-
-'''
-dir_base = 'bigboi/'
-tirvish = dir_base + 'checkpoints/TIRVish_json.txt'
-grf = dir_base + 'checkpoints/GRF_json.txt'
-work = dir_base + 'current_results/'
-
-print('Running CNN')
-mn = CNN_manager(tirvish, grf, work, threads)
-mn.run()
-'''

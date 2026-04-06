@@ -135,7 +135,7 @@ class json_loader:
 						new_source = os.path.join(self.work_dir, base)
 						#print(f'From existing GRF or TIRvish JSON, source updated from {source_file} to {new_source}')
 					else:
-						print(f'{source_file} not found, this will provbably fail.')
+						print(f'{source_file} not found, this will probably fail.')
 			
 			this_workload = {}
 			for seqid in self.json_data[source_file]:
@@ -177,7 +177,7 @@ class json_loader:
 						new_source = os.path.join(self.work_dir, base)
 						#print(f'From existing GRF or TIRvish JSON, source updated from {source_file} to {new_source}')
 					else:
-						print(f'{source_file} not found, this will provbably fail.')
+						print(f'{source_file} not found, this will probably fail.')
 						
 			self.workloads.append((new_source, self.json_data[source_file],))
 	
@@ -513,14 +513,6 @@ class bed_worker:
 			#If an end is greater than the next start, that end and its corresponding start are an overlap pair
 			has_tir_overlap = np.where(ends[:-1] >= starts[1:])[0]
 			
-			'''
-			Okay, what the hell do I need to do?
-			
-			same start elements have already been cleaned by the above...
-			
-			Maybe we need to iterate remove only bad overlaps until the size of the arrays doesn't change, 
-			skipping over nests
-			'''
 			
 			#kicked = 0
 			#rounds = 0
@@ -574,6 +566,7 @@ class bed_worker:
 					ends = np.delete(ends, remove_indices)
 					element_only_starts = np.delete(element_only_starts, remove_indices)
 					element_only_ends = np.delete(element_only_ends, remove_indices)
+					element_sizes = np.delete(element_sizes, remove_indices)
 					
 					#If there are any nested overlaps, this will have length > 0 even if there is nothing remaining to remove
 					has_tir_overlap = np.where(ends[:-1] >= starts[1:])[0]
@@ -617,15 +610,16 @@ def dereplicate_json(json_data, overlap_size = 5200):
 				#I think this os.path.basename and the TIRvish stuff are fighting in some genomes
 				mat = re.match(chunk_id_regex, os.path.basename(k)).groups()
 				seqid = mat[0]
+					
+				off = int(mat[1])
+				if seqid not in groupings:
+					groupings[seqid] = []
+					
+				groupings[seqid].append((k, off,))
 			
 			else:
 				print(f'JSON key {k} had no entries and will be skipped.')
 			
-			off = int(mat[1])
-			if seqid not in groupings:
-				groupings[seqid] = []
-				
-			groupings[seqid].append((k, off,))
 		else:
 			if len(json_data[k]) > 0:
 				#Manually copy short groups to the new JSON, otherwise with dicts it's done by reference

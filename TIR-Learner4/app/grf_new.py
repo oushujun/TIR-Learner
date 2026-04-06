@@ -24,6 +24,12 @@ long_chunk_offset_regex = re.compile(r'long_chunk_(.+)_offset_(\d+).fasta')
 #This one is pretty simple
 cig_parse_regex = re.compile(r'(\d+)')
 
+def grf_init(output_dir, max_tir_len):
+	global outdir
+	outdir = output_dir
+	global TIR_length
+	TIR_length = max_tir_len
+
 def parse_cig(GRF_cigar_string):
 	#The cigar string-like component represents the TIR sequence. From the github:
 	#The call for GRF specifically has --max_index=0, which prohibits any TIR indel
@@ -188,17 +194,6 @@ def one_GRF(gen):
 	return json_record, gen, out
 	
 def GRF_manager(input_genome_files, original_genome_seqlen_dict, output_directory, checkpoint_directory, overlap_size, chunk_size, threads = 1, max_TIR_length = 5000):
-	#global olap_size
-	#olap_size = overlap_size
-	global chunk_sz
-	chunk_sz = chunk_size
-	global original_seqlens
-	original_seqlens = original_genome_seqlen_dict
-	global outdir
-	outdir = output_directory
-	global TIR_length
-	TIR_length = max_TIR_length
-
 	#outf = os.path.join(output_directory, 'GRF_results.txt')
 	checkf = os.path.join(checkpoint_directory, 'GRF_json.txt')
 	grf_json = os.path.join(output_directory, 'GRF_json.txt')
@@ -227,7 +222,7 @@ def GRF_manager(input_genome_files, original_genome_seqlen_dict, output_director
 		
 		combined_json = {}
 		#with open(outf, 'wb') as outfile:
-		with multiprocessing.Pool(threads) as pool:
+		with multiprocessing.Pool(threads, initializer=grf_init, initargs=(output_directory, max_TIR_length)) as pool:
 		#with multiprocessing.Pool(1) as pool:
 			for json_dict, genome_file, output_directory in pool.imap_unordered(one_GRF, args):				
 				#Convert out of numpy for json write
