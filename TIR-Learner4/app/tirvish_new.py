@@ -127,15 +127,6 @@ def one_tirvish(args):
 	return json_record, genome
 
 def TIRvish_manager(input_genome_files, original_genome_seqlen_dict, output_directory, checkpoint_directory, overlap_size, chunk_size, threads = 1):
-	#global olap_size
-	#olap_size = overlap_size
-	global chunk_sz
-	chunk_sz = chunk_size
-	global original_seqlens
-	original_seqlens = original_genome_seqlen_dict
-	global outdir
-	outdir = output_directory
-
 	outf = os.path.join(output_directory, 'TIRVish_results.txt')
 	checkf = os.path.join(checkpoint_directory, 'TIRVish_json.txt')
 	tirvish_json = os.path.join(output_directory, 'TIRVish_json.txt')

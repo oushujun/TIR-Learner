@@ -20,6 +20,10 @@ program_root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 reflib_regex = re.compile(r'(.+)##(.+)##(.+)')
 
+def blast_init(wd):
+	global workdir
+	workdir = wd
+
 def make_one_db(infile):
 	output_database = os.path.join(workdir, 'module1', f'{os.path.basename(infile)}.blast.db')
 	output_database_check = os.path.join(workdir, 'module1', f'{os.path.basename(infile)}.blast.db.complete')
@@ -124,6 +128,8 @@ def blast_ref_vs_genome(args):
 			for end in cleaned_proc[genome_seqid][start]:
 				tir_type = cleaned_proc[genome_seqid][start][end]
 		
+				sub_length = end - start + 1
+		
 				#This is the in-genome homology TIR sequence we're looking at - it should be from TIR-TIR but probably not include TSD
 				substring = my_seqs[genome_seqid][start-1:end]
 				
@@ -148,7 +154,7 @@ def blast_ref_vs_genome(args):
 						#Extend the genome slice 10 bp left and right
 						tsd_left_start = max([0, start - tsd_check_size-1])
 						left_tsd_string = my_seqs[genome_seqid][tsd_left_start:(tsd_left_start+tsd_check_size)]
-						right_tsd_string = my_seqs[genome_seqid][(end):(end+tsd_check_size-1)]
+						right_tsd_string = my_seqs[genome_seqid][(end):(end+tsd_check_size)]
 						
 						#Find the longest correctly positioned TSD in that region at or above 80% seqid
 						has_tsd, left_tsd_size, right_tsd_size, tsd_percent = tt.check_tsd(left_tsd_string, 
@@ -290,12 +296,7 @@ class blaster:
 		self.library_blast_dbs = None
 		
 		self.get_species_ref()
-		
-		global workdir
-		workdir = self.wd
-		global ext_size
-		ext_size = 200
-		
+
 		self.ref_homolog_file = None
 		self.tirvish_homologs = None
 		self.grf_homologs = None
@@ -321,8 +322,8 @@ class blaster:
 	#Create a set of reference blast databases from the input genome chunks
 	def make_reference_blast_databases(self):		
 		self.ref_blast_databases = []
-		with multiprocessing.Pool(self.threads) as pool:
-			for r in pool.imap_unordered(make_one_db, self.reference_genome_chunks):	
+		with multiprocessing.Pool(self.threads, initializer=blast_init, initargs=(self.wd,)) as pool:
+			for r in pool.imap_unordered(make_one_db, self.reference_genome_chunks):
 				self.ref_blast_databases.append(r)
 		
 		#Sort by file size, descending; useful for load balancing as best as possible
@@ -344,33 +345,23 @@ class blaster:
 		mod1_fasta_filt = os.path.join(self.wd, 'module1', 'Module1_homology_hits_against_genome_fa_filtered.txt')
 		json_outfile = os.path.join(self.wd, 'module1', 'Module1_homology_hits_against_genome_json.txt')
 		
-		o1 = open(mod1_fasta, 'w')
-		o2 = open(mod1_gff, 'w')
-		o3 = open(mod1_fasta_filt, 'w')
-		o4 = open(mod1_gff_filt, 'w')
-		
-		#could use a progress tracker.
-		
-		#We put a bunch if info into this function and then filter what we need
-		final_json = {}
-		with multiprocessing.Pool(self.threads) as pool:
-			for og_seqid, this_result, fasta, gff3, keeps in pool.imap_unordered(blast_ref_vs_genome, args):
-				for seqid in keeps:
-					this_result[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
-					for i in range(0, keeps[seqid].shape[0]):
-						print(fasta[seqid][i], file = o1)
-						print(gff3[seqid][i], file = o2)
-						if keeps[seqid][i]:
-							print(fasta[seqid][i], file = o3)
-							print(gff3[seqid][i], file = o4)
+		with open(mod1_fasta, 'w') as o1, open(mod1_gff, 'w') as o2, open(mod1_fasta_filt, 'w') as o3, open(mod1_gff_filt, 'w') as o4:
+				#could use a progress tracker.
 
-					
-				final_json[og_seqid] = this_result
-				
-		o1.close()
-		o2.close()
-		o3.close()
-		o4.close()
+			#We put a bunch if info into this function and then filter what we need
+			final_json = {}
+			with multiprocessing.Pool(self.threads, initializer=blast_init, initargs=(self.wd,)) as pool:
+				for og_seqid, this_result, fasta, gff3, keeps in pool.imap_unordered(blast_ref_vs_genome, args):
+					for seqid in keeps:
+						this_result[seqid]['sequence_kept_after_overlaps'] = keeps[seqid].astype(int).tolist()
+						for i in range(0, keeps[seqid].shape[0]):
+							print(fasta[seqid][i], file = o1)
+							print(gff3[seqid][i], file = o2)
+							if keeps[seqid][i]:
+								print(fasta[seqid][i], file = o3)
+								print(gff3[seqid][i], file = o4)
+
+					final_json[og_seqid] = this_result
 		
 		with open(json_outfile, 'w', encoding = 'ascii') as out:
 			json.dump(final_json, out, indent = 4)
@@ -420,7 +411,7 @@ class blaster:
 		self.get_species_ref()
 				
 		ok_threads = min([self.threads, len(self.species_libraries)])
-		with multiprocessing.Pool(ok_threads) as pool:
+		with multiprocessing.Pool(ok_threads, initializer=blast_init, initargs=(self.wd,)) as pool:
 			for r in pool.imap_unordered(make_one_db, self.species_libraries):
 				self.library_blast_dbs.append(r)
 				

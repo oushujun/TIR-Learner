@@ -7,7 +7,7 @@
 import argparse
 import os
 
-VERSION = "v4.0.1"
+VERSION = "v1.0"
 INFO = "by Kenji Gerhardt, released under GPLv3"
 
 #Options
@@ -88,7 +88,7 @@ def main():
 		os.environ["CUDA_VISIBLE_DEVICES"] = "," #force torch to use CPU, not GPU
 
 	
-		print('Loading program resources. This ususally takes about a minute.')
+		print('Loading program resources. This usually takes about a minute.')
 		from app.main import newTL
 		print('Program resources loaded.')
 		print('')
