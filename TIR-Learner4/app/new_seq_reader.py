@@ -683,12 +683,12 @@ def dereplicate_json(json_data, overlap_size = 5200):
 								#Subset to only the overlaps
 								next_starts, next_ends = next_starts[right_starts], next_ends[right_starts]
 								#Double loop is dangerous but it's very small arrays in basically all cases
-								for i in left_starts:
-									this_start = these_starts[i]
-									this_end = these_ends[i]
-									for j in next_ends[next_starts == this_start]:
-										if this_end == j:
-											indices_to_remove.append(int(i))
+								for j in left_starts:
+									this_start = these_starts[j]
+									this_end = these_ends[j]
+									for j2 in next_ends[next_starts == this_start]:
+										if this_end == j2:
+											indices_to_remove.append(int(j))
 											
 								indices_to_remove = np.unique(np.array(indices_to_remove, dtype = np.int64))
 					

@@ -120,8 +120,49 @@ def one_tirvish(args):
 				
 				typ = segs[2]
 				
-				next_result.append((start, end,))	
-		
+				next_result.append((start, end,))
+
+		#Process the final record (no trailing # line to trigger it inside the loop)
+		if len(next_result) > 0:
+			mat = re.match(genome_split_regex, seqid)
+			mat = mat.groups()
+			offset = int(mat[1])
+			short_id = mat[0]
+
+			tsd_1_start, tsd_1_stop = next_result[1]
+			tsd_2_start, tsd_2_stop = next_result[5]
+
+			tir_1_start, tir_1_stop = next_result[3]
+			tir_2_start, tir_2_stop = next_result[4]
+
+			tsd1_size = tsd_1_stop - tsd_1_start + 1
+			tsd2_size = tsd_2_stop - tsd_2_start + 1
+			tir1_size = tir_1_stop - tir_1_start + 1
+			tir2_size = tir_2_stop - tir_2_start + 1
+
+			full_element_start, full_element_stop = min(next_result[0]), max(next_result[0])
+			no_tsd_start, no_tsd_stop = min(next_result[2]), max(next_result[2])
+
+			ok_seq = tan_check.check_acceptable_tans(seqid, no_tsd_start, no_tsd_stop, min_seqlen = 0, max_ta_pct = max_ta_pct, max_n_pct = max_N_pct)
+			ok_tir1 = tan_check.check_acceptable_tans(seqid, tir_1_start, tir_1_stop, min_seqlen = 0, max_ta_pct = max_ta_pct, max_n_pct = max_N_pct)
+			ok_tir2 = tan_check.check_acceptable_tans(seqid, tir_2_start, tir_2_stop, min_seqlen = 0, max_ta_pct = max_ta_pct, max_n_pct = max_N_pct)
+
+			if ok_seq and ok_tir1 and ok_tir2:
+				left_tir_seq = tan_check.seq_dict[seqid][tir_1_start-1 : tir_1_stop]
+				right_tir_seq = aligner.revcomp(tan_check.seq_dict[seqid][tir_2_start-1 : tir_2_stop])
+
+				has_tir, l_rep_sz, r_rep_sz, r_start, q_start, pct = aligner.wfa_align(left_tir_seq, right_tir_seq,
+																				min_size = 10, min_similarity = 0.8)
+
+				if has_tir:
+					json_record.add_record(seqid = seqid,
+											start = full_element_start,
+											stop = full_element_stop,
+											tsd1 = tsd1_size,
+											tsd2 = tsd2_size,
+											tir1 = tir1_size,
+											tir2 = tir2_size)
+
 	json_record.sort_records()
 	
 	return json_record, genome

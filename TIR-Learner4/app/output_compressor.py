@@ -8,12 +8,12 @@ def compress(input_file, threads = 1):
 		try:
 			print(f'Attempting to compress {input_file} with pigz...')
 			proc = subprocess.call(['pigz', '-6', '-k', '-p', str(threads), input_file])
-		except:
+		except Exception:
 			print('pigz compressor not found. Defaulting to gzip.')
 			try:
 				print(f'Attempting to compress {input_file} with gzip...')
 				proc = subprocess.call(['gzip', '-k', '-6', input_file])
-			except:
+			except Exception:
 				print('gzip compressor not found. The file will be left uncompressed.')
 
 def decompress(input_file, threads = 1):
@@ -22,11 +22,11 @@ def decompress(input_file, threads = 1):
 		if not os.path.exists(no_zip):
 			try:
 				subprocess.call(['pigz', '-d', '-k', '-p', str(threads), input_file])
-			except:
+			except Exception:
 				print('pigz decompress failed')
 				try:
 					subprocess.call(['gunzip', '-k', input_file])
-				except:
+				except Exception:
 					print('gunzip decompress failed.')
 	else:
 		print(f'File {input_file} was already unzipped')
