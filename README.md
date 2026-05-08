@@ -58,16 +58,16 @@ Version 4 keeps the v3 logical workflow (genome → TIRvish/GRF → optional hom
 
 TIR-Learner v3 suffered from a handful of issues that limited its usability on large genomes: 
 
-(3-1) The program took an aggressive, memory-forward method of filtering results using the Pandas package. While this approach was reasonably fast, memory copying in Python's parallel architecture and subtle design choices in TIR-Learner v3 often caused RAM consumption in the hundreds of GB for even reasonably sized genomes. 
-(3-2) v3 used a very inefficient method of sequence retrieval to extract TIR candidates after processing. In smaller, more fragmented genomes (such as the pacific shrimp genome used in TIR-Learner v3's testing), the scalability issues of the specific BioPy implementation were not readily apparent. Modern, complete chromosome genomes exposed this issue, and in most such cases the outright majority of program runtime would be consumed in this computationally very simple process.
+* (3-1) The program took an aggressive, memory-forward method of filtering results using the Pandas package. While this approach was reasonably fast, memory copying in Python's parallel architecture and subtle design choices in TIR-Learner v3 often caused RAM consumption in the hundreds of GB for even reasonably sized genomes. 
+* (3-2) v3 used a very inefficient method of sequence retrieval to extract TIR candidates after processing. In smaller, more fragmented genomes (such as the pacific shrimp genome used in TIR-Learner v3's testing), the scalability issues of the specific BioPy implementation were not readily apparent. Modern, complete chromosome genomes exposed this issue, and in most such cases the outright majority of program runtime would be consumed in this computationally very simple process.
 
 A typical eukaryotic genome with intact chromosomes would spend ~60% of its runtime in TIR-Learner v3 in these two steps, with TIRvish, GRF, and the CNN labelling collectively comprising the remaining 40%. While CPU utilization was good at ~70% @ 48 threads, the poor baseline performance of the underlying approaches made this figure misleading.
 
 v4 solves these issues:
 
-(4-1) Fixed-size genome chunking separates original genome size from RAM use entirely.
-(4-2) More efficient filtering algorithms, a streaming filtering approach, and chunk-local filtering distribute work and ensure predictable RAM use/thread irrespective of genome size, TIR density.
-(4-3) Chunk-local sequence retrieval is ultra fast, distributed, and requires little RAM.
+* (4-1) Fixed-size genome chunking separates original genome size from RAM use entirely.
+* (4-2) More efficient filtering algorithms, a streaming filtering approach, and chunk-local filtering distribute work and ensure predictable RAM use/thread irrespective of genome size, TIR density.
+* (4-3) Chunk-local sequence retrieval is ultra fast, distributed, and requires little RAM.
 
 The same eukaryotic genome processed with TIR-Learner v4 spends ~0.1% of its runtime in steps equivalent to (3-1) and (3-2). Although v4 is also more efficient in the GRF, TIRvish, and especially the CNN steps due to better load balancing and controlled resource allocation in the CNN stage, the baseline of work done by these tools is quite substantial. They account for nearly the entirety of the remaining ~30% of v4's runtime compared to v3. CPU utilization is also better, typically ~80% for shorter genomes and plateauing around ~90% for long ones.
 
