@@ -58,7 +58,7 @@ Version 4 keeps the v3 logical workflow (genome → TIRvish/GRF → optional hom
 
 TIR-Learner v3 suffered from a handful of issues that limited its usability on large genomes: 
 
-* (3-1) The program took an aggressive, memory-forward method of filtering results using the Pandas package. While this approach was reasonably fast, memory copying in Python's parallel architecture and subtle design choices in TIR-Learner v3 often caused RAM consumption in the hundreds of GB for even reasonably sized genomes. 
+* (3-1) The program took an aggressive, memory-forward method of filtering results using the Pandas package. While this approach was reasonably fast, memory copying in Python's parallel architecture and subtle design choices in TIR-Learner v3 often caused RAM consumption in the hundreds of GB for even reasonably sized genomes ~5 Gbp.
 * (3-2) v3 used a very inefficient method of sequence retrieval to extract TIR candidates after processing. In smaller, more fragmented genomes (such as the pacific shrimp genome used in TIR-Learner v3's testing), the scalability issues of the specific BioPy implementation were not readily apparent. Modern, complete chromosome genomes exposed this issue, and in most such cases the outright majority of program runtime would be consumed in this computationally very simple process.
 
 A typical eukaryotic genome with intact chromosomes would spend ~60% of its runtime in TIR-Learner v3 in these two steps, with TIRvish, GRF, and the CNN labelling collectively comprising the remaining 40%. While CPU utilization was good at ~70% @ 48 threads, the poor baseline performance of the underlying approaches made this figure misleading.
