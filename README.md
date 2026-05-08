@@ -93,16 +93,6 @@ mamba install -c conda-forge -c bioconda tir-learner
 
 After activation, the program is available on `PATH` as `TIR-Learner`.
 
-#### Forcing a CPU-only or CUDA PyTorch build
-
-TIR-Learner v4 runs the CNN on CPU and is not faster on GPU, but conda may still pull a CUDA-enabled PyTorch build on machines with visible GPUs (for example HPC nodes), which can break installation for users without GPU access. To force a CPU-only build:
-
-```shell
-mamba create -n TIRLearner_env -c conda-forge -c bioconda tir-learner "pytorch=*=*cpu*"
-```
-
-Use `"pytorch=*=*cuda*"` instead to force a CUDA build.
-
 ### From source
 
 Clone the repository and install dependencies via the bundled conda environment file:
@@ -113,7 +103,6 @@ cd TIR-Learner
 mamba env create -f environment.yml -n TIRLearner_env
 mamba activate TIRLearner_env
 ```
-
 Run the program with:
 
 ```shell
