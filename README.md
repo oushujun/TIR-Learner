@@ -7,7 +7,9 @@
 
 TIR-Learner is an ensemble pipeline for Terminal Inverted Repeat (TIR) transposable element annotation in eukaryotic genomes.
 
-Version 4 is a complete, end-to-end rewrite of the program. It retains the logical workflow, the external software calls (BLAST, GRF, TIRvish, Keras), and the core CNN model from v3, but every supporting layer — genome handling, candidate processing, parallelization, intermediate I/O, and post-processing — has been reimplemented from scratch. Results in TIR-Learner v4 are essentially identical to those in v3, excepting a bugfix to correctly localize sequence retrievals from TIRvish, edge case inclusions/exclusions dur to v4 correctly calculating TIR percent identity, and small changes introduced though (slight) indel allowance in TIR, TSD sequences.
+Version 4 is a complete, end-to-end rewrite of the program. It retains the logical workflow, the external software calls (BLAST, GRF, TIRvish, Keras), and the core CNN model from v3, but every supporting layer — genome handling, candidate processing, parallelization, intermediate I/O, and post-processing — has been reimplemented from scratch. 
+
+Results in TIR-Learner v4 are essentially identical to those in v3, excepting a bugfix to correctly localize sequence retrievals from TIRvish, edge case inclusions/exclusions dur to v4 correctly calculating TIR percent identity, and small changes introduced though (slight) indel allowance in TIR, TSD sequences. 
 
 TIR-Learner v4 is about 3.3x faster than v3 and uses vastly less RAM, acheiving <= 2GB RAM per thread usage. Processing genomes of any size is possible with v4.
 
